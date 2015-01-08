@@ -60,6 +60,15 @@ public class Planet implements Cloneable {
     public void RemoveShips(int amount) {
 	numShips -= amount;
     }
+    
+    public String toString(){
+    	StringBuilder s = new StringBuilder();
+		
+		s.append("P x: " + x + " y: " + y + " Owner: " + owner + " NumShips: " + numShips + " Growth: " + growthRate + "\n");
+
+		
+		return s.toString();
+    }
 
     private int planetID;
     private int owner;

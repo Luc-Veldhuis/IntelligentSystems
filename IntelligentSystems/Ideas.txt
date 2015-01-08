@@ -1,0 +1,21 @@
+Just some possible ideas
+Strategy:
+Loopup function with alpha beta pruning?
+Or Adaptive? (Need a lot of statistics for this)
+	If we choose adaptive
+		Which different bots should we use?
+
+Heuristics function:
+Variables:
+	Number of enemy ships
+	Number of enemy planets and/or regeneration rate?
+	Our own number of ships
+	Our own regeneration rate/number of planets?
+
+Would be nice to have:
+Program which is able to test different bots multiple times and obtain statistics of who wins (probably in python)
+
+Possible uses for the program:
+For final assignment, we have results
+Make adaptive strategy, based on results
+Test statistics of different heuristic functions, so we can see which performs better

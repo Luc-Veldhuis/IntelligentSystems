@@ -1,4 +1,4 @@
-import subprocess, re, os.path
+import subprocess, glob, os.path
 player1 = 0
 player2 = 0
 draws = 0
@@ -6,15 +6,6 @@ number_of_planets = 0
 map_number = 0
 bot_player_1 = 0
 bot_player_2 = 0
-
-
-def getVersion():
-	java_check = subprocess.Popen(['java','-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	java_version = java_check.communicate()
-	content = java_version[1].decode('utf-8')
-	regex = re.compile('".*"')
-	result = regex.findall(content)[0].strip('"')
-	return result
 
 while number_of_planets == 0 or not os.path.isdir('tools/maps/'+number_of_planets+'planets'):
 	number_of_planets = input("Number of planets: ")
@@ -28,15 +19,13 @@ while bot_player_1 == 0 or not os.path.isfile(str(bot_player_1)+'.class'):
 while bot_player_1 == 0 or not os.path.isfile(str(bot_player_2)+'.class'):
 	bot_player_2 = input("Enter the name of the bot for player 2: ")
 
-'''
-Did not worked as I hoped
-For autocompilation, but the javac could not be adressed easily, hardcoding seems to be the best solution
-path = 'C:/Program Files/Java/jdk'+getVersion()+'/bin/javac.exe'
+
+path = glob.glob('C:/Program Files/Java/jdk*/bin/javac.exe')[0]
 subprocess.Popen([path,bot_player_1+'.java'])
 subprocess.Popen([path,bot_player_2+'.java'])
-'''
 
-for i in range(0,50):
+
+for i in range(0,10):
 	print("turn "+str(i))
 	game = subprocess.Popen(['java','-jar','tools/PlayGame.jar','tools/maps/'+str(number_of_planets)+'planets/map'+str(map_number)+'.txt','java '+str(bot_player_1),'java '+str(bot_player_2)],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	lines = game.communicate();
@@ -52,5 +41,5 @@ for i in range(0,50):
 
 
 print("Draws: "+ str(draws))
-print("Player 1 has won: "+ str(player1) + " times")
-print("Player 2 has won: "+ str(player2) + " times")
+print(bot_player_1+" has won: "+ str(player1) + " times")
+print(bot_player_2+" has won: "+ str(player2) + " times")

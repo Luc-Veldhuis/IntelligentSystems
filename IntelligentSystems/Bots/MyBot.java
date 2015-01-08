@@ -137,24 +137,26 @@ public class MyBot {
 		Planet source = startingPlanet;
 		Planet dest = new Planet(100, 1, 500, 0, 0, 0); //Temporary planet with horrible heuristics
 		
-		pw.log("dest planet growth: ", dest.GrowthRate(), " ships: ", dest.NumShips(), " heuristic: ", growthFleetHeuristic(dest));
+		pw.log("dest planet growth: ", dest.GrowthRate(), " ships: ", dest.NumShips(), " heuristic: ", growthFleetHeuristic(dest,pw));
 		
 		//Get the biggest planets (bigger than size 3)that are closer to enemy then self
 		for(int i=0; i<pw.NeutralPlanets().size(); i++){ //Don't consider enemy starting point?
 			Planet p = pw.NeutralPlanets().get(i);
 
-			//Check if the neutral planet is closer to enemy than self (starting points)
-			if(pw.Distance(source.PlanetID(), p.PlanetID()) < pw.Distance(pw.EnemyPlanets().get(0).PlanetID(), p.PlanetID())){
-				//Check that it has good growth vs neutral fleets heuristics. 
-				double temp = growthFleetHeuristic(p);
-				if(temp >= growthFleetHeuristic(dest)){
-					pw.log("dest planet growth: ", p.GrowthRate(), " ships: ", p.NumShips(), " heuristic: ", temp);
-					dest = p;
-				}
+			//Check if the neutral planet is closer to enemy than self (starting points) ONLY FOR PARALLEL
+			//if(pw.Distance(source.PlanetID(), p.PlanetID()) < pw.Distance(pw.EnemyPlanets().get(0).PlanetID(), p.PlanetID())){
+			//Check that it has good growth vs neutral fleets heuristics. 
+			
+			double temp = growthFleetHeuristic(p, pw);
+			if(temp >= growthFleetHeuristic(dest, pw)){
+				pw.log("dest planet growth: ", p.GrowthRate(), " ships: ", p.NumShips(), " heuristic: ", temp);
+				dest = p;
 			}
 			
+			//}
+			
 		}
-		if(growthFleetHeuristic(dest) <= 0.4){
+		if(growthFleetHeuristic(dest, pw) <= 0.4){
 			dest = pw.EnemyPlanets().get(0);
 		}
 		
@@ -163,21 +165,19 @@ public class MyBot {
 	}
 	
 	/**
-	 * Retrive the heuristic for ratio between growth and fleet of certain planet
+	 * Retrieve the heuristic for ratio between growth and fleet of certain planet
 	 * @param Planet p
-	 * @return ratio: 0-1 where 1 is best and 0 is worst
+	 * @return ratio: -infinity - 1 where 1 is best and -infinity is worst
 	 */
-	public static double growthFleetHeuristic(Planet p){
-		//Ranges from 0-1, where 0 is worst and 1 is best. e.g. 0 means e.g. 100 fleets and growth 0, and 1 means e.g. 0 fleets and growth 5
+	public static double growthFleetHeuristic(Planet p, PlanetWars pw){
 		
-		int value = 0; 
 		//GrowthRate() returns 0-5
 		int growth = p.GrowthRate();
 		//fleets() returns number of ships
 		int ships = p.NumShips();
 		
-		
-		return Math.ceil((growth*20 - ships)/10);
+		//Can be finetuned 
+		return Math.ceil((growth*2 - (ships/pw.NumShips(0))*10)/10);
 		
 	}
 	

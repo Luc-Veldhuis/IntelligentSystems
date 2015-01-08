@@ -34,7 +34,10 @@ public class MyBot {
 		for (Planet p : pw.NeutralPlanets()) {
 			totalPlanetSize += p.GrowthRate();
 		}
-		int averagePlanetSize = Math.round(totalPlanetSize/pw.NeutralPlanets().size());
+		int averagePlanetSize = totalPlanetSize;
+		if(pw.NeutralPlanets().size() != 0){
+			averagePlanetSize = Math.round(totalPlanetSize/pw.NeutralPlanets().size());
+		}
 			
 		if(true){
 			DoBullyBotTurn(pw);

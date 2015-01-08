@@ -136,6 +136,7 @@ public class MyBot {
 		
 		Planet source = startingPlanet;
 		Planet dest = new Planet(100, 1, 500, 0, 0, 0); //Temporary planet with horrible heuristics
+		
 		pw.log("dest planet growth: ", dest.GrowthRate(), " ships: ", dest.NumShips(), " heuristic: ", growthFleetHeuristic(dest));
 		
 		//Get the biggest planets (bigger than size 3)that are closer to enemy then self

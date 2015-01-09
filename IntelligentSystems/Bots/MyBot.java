@@ -150,18 +150,7 @@ public class MyBot {
 		
 		if(pw.NeutralPlanets().size() == 0){ //if 0 neutral planets exist
 			System.err.println("No neutral planets");
-			dest = pw.EnemyPlanets().get(0);
-			
-			for(int i=0; i<pw.EnemyPlanets().size(); i++){
-				Planet p = pw.EnemyPlanets().get(i);
-
-				int temp = p.NumShips();
-				
-				if(temp < dest.NumShips()){
-					dest = p;
-				}
-				
-			}
+			dest = minFleetPlanet(pw, 2);
 		}else{
 			for(int i=0; i<pw.NeutralPlanets().size(); i++){
 				Planet p = pw.NeutralPlanets().get(i);
@@ -181,13 +170,63 @@ public class MyBot {
 		
 		pw.IssueOrder(source, dest);
 	}
+
+	/**
+	 * Will use heuristics to target the enemy planet that is most suited for attack.
+	 * @param pw: PlanetWars object
+	 */
+	public static void attackEnemyBot(PlanetWars pw){
+		List<Planet> allPlanets= pw.EnemyPlanets();
+		Planet source = pickSourcePlanet(pw);
+		Planet dest = new Planet(100, 2, 1000, 1, 1, 1);
+		
+		for(int i=0; i<allPlanets.size(); i++){
+			Planet temp = allPlanets.get(i);
+			if(temp.GrowthRate() > dest.GrowthRate()){
+				dest = temp;
+			}
+		}
+	}
 	
+	/**
+	 * Use heuristics to pick the perfect source planet to send ships from
+	 * Typically the one with the most ships, unless some other planet with significantly
+	 * lower growth has almost the same amount of ships!
+	 * @param pw: PlanetWars object
+	 * @return p: Planet object with the best heuristics.
+	 */
+	public static Planet pickSourcePlanet(PlanetWars pw){
+		List<Planet> allPlanets = pw.MyPlanets();
+		
+		Planet p = new Planet(100, 1, 1, 2, 1, 1); //Horrible heuristics
+		
+		for(int i=0; i< allPlanets.size(); i++){
+			Planet temp = allPlanets.get(i);
+			if(p.NumShips() <= temp.NumShips()){
+				if(temp.GrowthRate() <= p.GrowthRate()){
+					p = temp;
+				}
+				//VALUE HERE CAN BE MODIFIED, 5 IS THE AMOUNT OF SHIPS DIFFERENCE (MAYBE USE PERCENTAGE OF TOTAL SHIPS INSTEAD?)
+				else if((temp.NumShips() - p.NumShips()) >= 5){
+					p = temp;
+				}
+				//If temp har more growth, but less than 5 planets different, don't assign temp, use previous p instead
+				else{
+					//Do nothing
+				}
+			}
+			
+			
+		}
+		
+		return p;
+	}
 	
 	public static void startPlanet(PlanetWars pw){
 		Planet[] planetDistanceArray;
 		planetDistanceArray = lengths(pw,pw.MyPlanets().get(0));
 		
-		Planet source = startingPlanet;
+		Planet source = pickSourcePlanet(pw);
 		Planet dest = new Planet(100, 1, 500, 0, 0, 0); //Temporary planet with horrible heuristics
 			
 		//Get the biggest planets (bigger than size 3)that are closer to enemy then self
@@ -207,12 +246,52 @@ public class MyBot {
 			//}
 			
 		}
-		if(growthFleetHeuristic(dest, pw) <= 0.4){
-			dest = pw.EnemyPlanets().get(0);
+		if(growthFleetHeuristic(dest, pw) <= 0.4){ //No planet higher than 4 exists, attack planet with the minimum ships
+			dest = minFleetPlanet(pw, 2);
+			Planet temp = minFleetPlanet(pw, 0);
+			if(dest.NumShips() > temp.NumShips()){
+				dest = temp;
+			}
 		}
 		
 		pw.IssueOrder(source, dest);
 		
+	}
+	
+	/**
+	 * Will return the planet containing the least amount of ships for a specific player
+	 * If two planets contain the same (least)amount, the one with highest growth rate will be returned.
+	 * @param pw: PlanetWars object
+	 * @param player: the player to get planet with lowest ships from
+	 * @return
+	 */
+	public static Planet minFleetPlanet(PlanetWars pw, int player){
+		Planet p = new Planet(100, 1, 10000, 1, 1, 1);
+		List<Planet> allPlanets;
+		if(player == 0){
+			allPlanets = pw.NeutralPlanets();
+			if(allPlanets.size() == 0){ //If there are no neutral, pick enemy instead
+				allPlanets = pw.EnemyPlanets();
+			}
+		}else if(player == 1){
+			allPlanets = pw.MyPlanets();
+		}else{
+			allPlanets = pw.EnemyPlanets();
+		}
+		
+		//Find the planet with the least amount of ships, if there are two identical, choose the one with highest
+		//Growth rate.
+		for(int i=0; i<allPlanets.size(); i++){
+			if(pw.GetPlanet(allPlanets.get(i).PlanetID()).NumShips() < p.NumShips()) {
+				p = pw.GetPlanet(allPlanets.get(i).PlanetID());
+			}else if(pw.GetPlanet(allPlanets.get(i).PlanetID()).NumShips() == p.NumShips()){
+				if(pw.GetPlanet(allPlanets.get(i).PlanetID()).GrowthRate() > p.GrowthRate()){
+					p = pw.GetPlanet(allPlanets.get(i).PlanetID());
+				}
+			}
+		}
+		
+		return p;
 	}
 	
 	/**
@@ -229,7 +308,6 @@ public class MyBot {
 		//Values can be fine tuned 
 		return (growth*2 - ((double)ships/pw.NumShips(1))*8)/10;
 	}
-	
 	
 	/**
 	 * Returns an array containing all the planets (except source planet) sorted by their distance

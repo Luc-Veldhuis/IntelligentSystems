@@ -3,13 +3,12 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Heuristics {
-	public static PlanetWars pw;
 	
-	public Heuristics(PlanetWars pw){
-		Heuristics.pw = pw;
+	public Heuristics(){
+		
 	}
 	
-	public static Planet pickSourcePlanet(){
+	public Planet pickSourcePlanet(PlanetWars pw){
 		List<Planet> allPlanets = pw.MyPlanets();
 		
 		Planet p = new Planet(100, 1, 1, 2, 1, 1); //Horrible heuristics
@@ -43,8 +42,9 @@ public class Heuristics {
 	 * @param player: the player to get planet with lowest ships from
 	 * @return
 	 */
-	public static Planet minFleetPlanet(int player){
-		Planet p = new Planet(100, 1, 10000, 1, 1, 1);
+	public Planet minFleetPlanet(PlanetWars pw, int player){
+		Planet p = new Planet(100, player, 10000, 1, 1, 1);
+
 		List<Planet> allPlanets;
 		if(player == 0){
 			allPlanets = pw.NeutralPlanets();
@@ -60,11 +60,13 @@ public class Heuristics {
 		//Find the planet with the least amount of ships, if there are two identical, choose the one with highest
 		//Growth rate.
 		for(int i=0; i<allPlanets.size(); i++){
-			if(pw.GetPlanet(allPlanets.get(i).PlanetID()).NumShips() < p.NumShips()) {
-				p = pw.GetPlanet(allPlanets.get(i).PlanetID());
-			}else if(pw.GetPlanet(allPlanets.get(i).PlanetID()).NumShips() == p.NumShips()){
-				if(pw.GetPlanet(allPlanets.get(i).PlanetID()).GrowthRate() > p.GrowthRate()){
-					p = pw.GetPlanet(allPlanets.get(i).PlanetID());
+			if(allPlanets.get(i).NumShips() < p.NumShips()) {
+				p = allPlanets.get(i);
+			}else if(allPlanets.get(i).NumShips() == p.NumShips()){
+				if(allPlanets.get(i).GrowthRate() > p.GrowthRate()){
+					p = allPlanets.get(i);
+				}else{
+					//Do nothing
 				}
 			}
 		}
@@ -77,7 +79,7 @@ public class Heuristics {
 	 * @param Planet p
 	 * @return ratio: -infinity - 1 where 1 is best and -infinity is worst
 	 */
-	public static double growthFleetHeuristic(Planet p){
+	public double growthFleetHeuristic(PlanetWars pw, Planet p){
 		//GrowthRate() returns 0-5
 		int growth = p.GrowthRate();
 		//fleets() returns number of ships
@@ -93,7 +95,7 @@ public class Heuristics {
 	 * 
 	 * @return : array containing planet IDs sorted by distance to source. 
 	 */
-	public static Planet[] lengths(Planet source){
+	public Planet[] lengths(PlanetWars pw, Planet source){
 		List<Planet> allPlanets = pw.NotMyPlanets();
 		int[] lengthArray = new int[pw.NotMyPlanets().size()];
 		Planet[] planetArray = new Planet[pw.NotMyPlanets().size()];

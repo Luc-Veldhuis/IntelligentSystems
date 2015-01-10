@@ -1,7 +1,5 @@
 import subprocess, glob, os.path
-player1 = 0
-player2 = 0
-draws = 0
+mode = 'parallel'
 results = {'draw':0, 'player1':0, 'player2':0}
 map_results={}
 bot_player_1 = 0
@@ -22,18 +20,20 @@ list_of_range = list(range(3,9))
 list_of_range.append('larger')
 for number_of_planets in list_of_range:
 	print(str(number_of_planets)+" planets")
-
+	if number_of_planets != "larger":
+			number_of_planets = str(number_of_planets)+ "planets"
 	#not so nice solution on finding all maps in the folders
 	range_of_maps = list(range(1,4))
 	if number_of_planets == "larger":
 		range_of_maps.extend(list(range(4,13)))
 	for map_number in range_of_maps:
 		print("Map "+str(map_number))
-		game = subprocess.Popen(['java','-jar','tools/PlayGame.jar','tools/maps/'+str(number_of_planets)+'planets/map'+str(map_number)+'.txt','java '+str(bot_player_1),'java '+str(bot_player_2)],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		game = subprocess.Popen(['java','-jar','tools/PlayGame.jar','tools/maps/'+str(number_of_planets)+'/map'+str(map_number)+'.txt','java '+str(bot_player_1),'java '+str(bot_player_2), mode],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		lines = game.communicate();
 		output = lines[len(lines)-1].decode("utf-8")
 		all_output = output.split('\n')
 		result = all_output[len(all_output)-2]
+		print(result)
 		if(result.find("Draw") != -1):
 			results['draw'] += 1
 			map_results[str(number_of_planets)+ " "+str(map_number)] = "draw"

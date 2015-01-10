@@ -29,7 +29,7 @@ def generate(data, generated_path):
     output.close()
 
 if __name__ == "__main__":
-    data = raw_input()
+    data = input()
 
     path = os.path.dirname(__file__)
     generated_path = os.path.realpath(os.path.join(path, 'generated.htm'))

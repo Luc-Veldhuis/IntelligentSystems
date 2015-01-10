@@ -91,7 +91,7 @@ public class MyLookBot {
 		double[] result = {-Double.MAX_VALUE, sourcePlanet, destinationPlanet};
 		for(int i = 0; i < pw.EnemyPlanets().size(); i++){
 			for(int j = 0; j< pw.MyPlanets().size(); j++){
-				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,1);
+				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,2);
 				double value = findBestAttackPlanet(tempPW,depth-1,i,j)[0];
 				if(result[0]<value){
 					result[0]=value;
@@ -104,27 +104,36 @@ public class MyLookBot {
 	}
 	
 	public static SimulatedPlanetWars adjustPlanetWars(SimulatedPlanetWars currentState, int sourcePlanet, int destinationPlanet, int player){
-		Planet source = currentState.MyPlanets().get(sourcePlanet);
-		Planet dest = currentState.EnemyPlanets().get(destinationPlanet);
+		Planet source = null;
+		Planet dest = null;
+		SimulatedPlanetWars result = currentState.clone();
 		if(player == 2){
-			source = currentState.EnemyPlanets().get(sourcePlanet);
-			dest = currentState.MyPlanets().get(destinationPlanet);
+			source = result.EnemyPlanets().get(sourcePlanet);
+			dest = result.MyPlanets().get(destinationPlanet);
 		}
-		currentState.simulateAttack(player, source, dest);
-		currentState.simulateGrowth();
+		else{
+			source = result.MyPlanets().get(sourcePlanet);
+			dest = result.EnemyPlanets().get(sourcePlanet);
+		}
+		result.simulateAttack(player, source, dest);
+		result.simulateGrowth();
 		
 		return currentState;
 	}
 
 	public static void DoTurn(PlanetWars pw) {
-		
+		System.out.println();
 		double score = -Double.MAX_VALUE;
-		Planet[] result = findMinimax(pw,3);
+		Planet[] result = findMinimax(pw,2);
 		Planet source = result[0];
 		Planet dest = result[1];			
 		// Attack using the source and destinations that lead to the most promising state in the simulation
 		if (source != null && dest != null) {
 			pw.IssueOrder(source, dest);
+			System.err.println(source.PlanetID()+" " + dest.PlanetID());
+		}
+		else{
+			System.err.println("invalid planets");
 		}
 		
 
@@ -216,13 +225,19 @@ public class MyLookBot {
 	 * (except for Fleets, that are not used).
 	 *
 	 */
-	public class SimulatedPlanetWars{
+	public class SimulatedPlanetWars implements Cloneable{
 
 		List<Planet> planets = new ArrayList<Planet>();
 		
 		public SimulatedPlanetWars(PlanetWars pw) {
 
 			for (Planet planet: pw.Planets()){
+				planets.add((Planet)planet.clone());
+			}
+		}
+		
+		public SimulatedPlanetWars(List<Planet> clonePlanets){
+			for(Planet planet: clonePlanets){
 				planets.add(planet);
 			}
 		}
@@ -427,6 +442,15 @@ public class MyLookBot {
 
 	    public void IssueOrder(Planet source, Planet dest) {
 	    	simulateAttack(source,dest);
+	    }
+	    
+	    public SimulatedPlanetWars clone(){
+	    	List<Planet> copyList = new ArrayList<Planet>();
+	    	for(Planet planet: planets){
+	    		copyList.add((Planet)planet.clone());
+	    	}
+	    	SimulatedPlanetWars result = new SimulatedPlanetWars(copyList);
+	    	return result;
 	    }
 	    
 	

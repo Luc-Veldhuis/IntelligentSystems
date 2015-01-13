@@ -17,86 +17,56 @@ import java.util.*;
  * Is there a smart way to make this more efficient?
  */
 
-public class MyLookBot {
+public class MyAlphaBot {
 
-	//static Heuristics hc;
-	/*
-	public static Planet getBestPlanet(PlanetWars pw, int depth, int numberOfChildren){
-		SimulatedPlanetWars copyOfPlanetWars = createSimulation(pw);
-		double score = -Double.MAX_VALUE;
-		Planet bestPlanet = null;
-		Planet [] bestPlanetArray = new Planet[numberOfChildren];
-		int player = (depth % 2 == 0) ? 1 : 2;
-		//check which are the numberOfChilerden best planets to attack
-		//check which are the numberOfChilerden best planets of the enemy to attack
-		if(depth == 0){
-			return null;
-		}
-		List<Planet> listOfPlanets = pw.EnemyPlanets();
-		if(player == 1){
-			//my turn
-			listOfPlanets = pw.MyPlanets();
-		}
-		for(int i = 0; i< numberOfChildren && i < listOfPlanets.size();i++){
-			SimulatedPlanetWars simulation = createSimulation(pw);
-			//get best starting planet left
-			Planet source = hc.pickSourcePlanet(copyOfPlanetWars,i);
-			for(int j = 0; j<numberOfChildren && i < pw.EnemyPlanets();j++){
-				Planet destination = hc.pickDestination(copyOfPlanetWars,j);
-				simulation.simulateAttack(source,destination);
-				simulation.simulateGrowth();
-				
-			}
-			
-			
-			
-			
-			//start the following without the source planet
-			copyOfPlanetWars.planets.remove(source);
-		}
-
-
-	}
-	*/
+	//Not to be confused with alphabet
 	
 	public static Planet[] findMinimax(PlanetWars pw, int depth){
-		double[] result = findBestAttackPlanet(createSimulation(pw),depth,0 , 0);
+		double[] result = findBestAttackPlanet(createSimulation(pw),depth,0 , 0, -Double.MAX_VALUE, Double.MAX_VALUE);
 		//the result has on place 1 the index for the source planet and place 2 the index for the destination planet
 		return new Planet[] {pw.MyPlanets().get((int) result[1]),pw.EnemyPlanets().get((int)result[2])};
 	}
 	
-	public static double[] findBestAttackPlanet(SimulatedPlanetWars pw, int depth, int sourcePlanet, int destinationPlanet){
+	public static double[] findBestAttackPlanet(SimulatedPlanetWars pw, int depth, int sourcePlanet, int destinationPlanet, double alpha, double beta){
 		if(depth==0){
-			return new double[] {evaluateState(pw),sourcePlanet, destinationPlanet};
+			return new double[] {evaluateState(pw),sourcePlanet, destinationPlanet,alpha, beta};
 		}
-		double[] result = {-Double.MAX_VALUE, sourcePlanet, destinationPlanet};
+		double[] result = {-Double.MAX_VALUE, sourcePlanet, destinationPlanet, alpha, beta};
 		for(int i = 0; i < pw.MyPlanets().size(); i++){
 			for(int j = 0; j< pw.NotMyPlanets().size(); j++){
 				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,1);
-				double value = findWorstDefendPlanet(tempPW,depth-1,i,j)[0];
+				double value = findWorstDefendPlanet(tempPW,depth-1,i,j,alpha,beta)[0];
+				if(result[0]>beta){
+					return result;
+				}
 				if(result[0]<value){
 					result[0]=value;
 					result[1]=i;
 					result[2]=j;
+					result[3] = Math.max(alpha, value);
 				}
 			}
 		}
 		return result;
 	}
 	
-	public static double[] findWorstDefendPlanet(SimulatedPlanetWars pw, int depth, int sourcePlanet, int destinationPlanet){
+	public static double[] findWorstDefendPlanet(SimulatedPlanetWars pw, int depth, int sourcePlanet, int destinationPlanet, double alpha, double beta){
 		if(depth==0){
-			return new double[] {evaluateState(pw),sourcePlanet, destinationPlanet};
+			return new double[] {evaluateState(pw),sourcePlanet, destinationPlanet, alpha, beta};
 		}
-		double[] result = {-Double.MAX_VALUE, sourcePlanet, destinationPlanet};
+		double[] result = {-Double.MAX_VALUE, sourcePlanet, destinationPlanet,alpha, beta};
 		for(int i = 0; i < pw.EnemyPlanets().size(); i++){
 			for(int j = 0; j< pw.MyPlanets().size()+pw.NeutralPlanets().size(); j++){
 				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,2);
-				double value = findBestAttackPlanet(tempPW,depth-1,i,j)[0];
+				double value = findBestAttackPlanet(tempPW,depth-1,i,j,alpha, beta)[0];
+				if(value<=alpha){
+					return result;
+				}
 				if(result[0]<value){
 					result[0]=value;
 					result[1]=i;
 					result[2]=j;
+					result[4] = Math.min(value,beta);
 				}
 			}
 		}
@@ -125,6 +95,7 @@ public class MyLookBot {
 
 	public static void DoTurn(PlanetWars pw) {
 		System.out.println();
+		System.err.println("wtf");
 		double score = -Double.MAX_VALUE;
 		Planet[] result = findMinimax(pw,2);
 		Planet source = result[0];
@@ -137,7 +108,7 @@ public class MyLookBot {
 		else{
 			System.err.println("invalid planets");
 		}
-		
+		System.out.println();
 
 	}
 	
@@ -220,7 +191,7 @@ public class MyLookBot {
 	/**
 	 * Static LookaheadBot, used only to access SimulatedPlanetWars (DON'T CHANGE)
 	 */
-	static MyLookBot dummyBot = new MyLookBot();
+	static MyAlphaBot dummyBot = new MyAlphaBot();
 	
 	/**
 	 * Class which provide the simulation environment, has same interface as PlanetWars 

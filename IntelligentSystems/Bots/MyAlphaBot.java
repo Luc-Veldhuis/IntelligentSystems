@@ -45,7 +45,8 @@ public class MyAlphaBot {
 	public static Planet[] findMinimax(PlanetWars pw, int depth){
 		double[] result = findBestAttackPlanet(createSimulation(pw),depth,0 , 0, -Double.MAX_VALUE, Double.MAX_VALUE);
 		//the result has on place 1 the index for the source planet and place 2 the index for the destination planet
-		return new Planet[] {pw.MyPlanets().get((int) result[1]),pw.EnemyPlanets().get((int)result[2])};
+		logger.info(result[1] + " "+ result[2] + " "+result[3] + " "+result[4]);
+		return new Planet[] {pw.MyPlanets().get((int) result[1]),pw.NotMyPlanets().get((int)result[2])};
 	}
 	
 	public static double[] findBestAttackPlanet(SimulatedPlanetWars pw, int depth, int sourcePlanet, int destinationPlanet, double alpha, double beta){
@@ -58,7 +59,6 @@ public class MyAlphaBot {
 			for(int j = 0; j< pw.NotMyPlanets().size(); j++){
 				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,1);
 				double value = findWorstDefendPlanet(tempPW,depth-1,i,j,alpha,beta)[0];
-				logger.info(depth+"");
 				if(result[0]>beta){
 					return result;
 				}
@@ -129,7 +129,7 @@ public class MyAlphaBot {
 			pw.IssueOrder(source, dest);
 		}
 		else{
-			pw.log("invalid planets");
+			logger.info("invalid planets");
 		}
 	}
 	

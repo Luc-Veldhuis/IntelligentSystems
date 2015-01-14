@@ -2,6 +2,12 @@
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.logging.Level;
+
+import java.util.logging.Logger;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
+
 import java.util.*;
 
 /** Another smarter kind of bot, which implements a minimax algorithm with look-ahead of two turns.
@@ -18,6 +24,21 @@ import java.util.*;
  */
 
 public class MyAlphaBot {
+	static Logger logger;
+	static FileHandler errorLog;
+	MyAlphaBot(){
+		try{
+			errorLog = new FileHandler("errorlog.txt");
+			SimpleFormatter formatter = new SimpleFormatter();  
+        	errorLog.setFormatter(formatter);
+        	logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+        	logger.addHandler(errorLog);
+		}
+		catch(Exception io){
+			System.exit(1);
+		}
+		
+	}
 
 	//Not to be confused with alphabet
 	
@@ -29,13 +50,15 @@ public class MyAlphaBot {
 	
 	public static double[] findBestAttackPlanet(SimulatedPlanetWars pw, int depth, int sourcePlanet, int destinationPlanet, double alpha, double beta){
 		if(depth==0){
-			return new double[] {evaluateState(pw),sourcePlanet, destinationPlanet,alpha, beta};
+			double value=evaluateState(pw);
+			return new double[] {value,sourcePlanet, destinationPlanet,alpha, beta};
 		}
 		double[] result = {-Double.MAX_VALUE, sourcePlanet, destinationPlanet, alpha, beta};
 		for(int i = 0; i < pw.MyPlanets().size(); i++){
 			for(int j = 0; j< pw.NotMyPlanets().size(); j++){
 				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,1);
 				double value = findWorstDefendPlanet(tempPW,depth-1,i,j,alpha,beta)[0];
+				logger.info(depth+"");
 				if(result[0]>beta){
 					return result;
 				}
@@ -52,11 +75,12 @@ public class MyAlphaBot {
 	
 	public static double[] findWorstDefendPlanet(SimulatedPlanetWars pw, int depth, int sourcePlanet, int destinationPlanet, double alpha, double beta){
 		if(depth==0){
-			return new double[] {evaluateState(pw),sourcePlanet, destinationPlanet, alpha, beta};
+			double value=evaluateState(pw);
+			return new double[] {value,sourcePlanet, destinationPlanet, alpha, beta};
 		}
 		double[] result = {-Double.MAX_VALUE, sourcePlanet, destinationPlanet,alpha, beta};
 		for(int i = 0; i < pw.EnemyPlanets().size(); i++){
-			for(int j = 0; j< pw.MyPlanets().size()+pw.NeutralPlanets().size(); j++){
+			for(int j = 0; j< pw.MyPlanets().size()+pw.NeutralPlanets().size()-1; j++){
 				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,2);
 				double value = findBestAttackPlanet(tempPW,depth-1,i,j,alpha, beta)[0];
 				if(value<=alpha){
@@ -79,37 +103,34 @@ public class MyAlphaBot {
 		SimulatedPlanetWars result = currentState.clone();
 		if(player == 2){
 			source = result.EnemyPlanets().get(sourcePlanet);
-			if(destinationPlanet>result.MyPlanets().size()){
+			if(destinationPlanet>=result.MyPlanets().size()){
 				dest = result.NeutralPlanets().get(destinationPlanet-result.MyPlanets().size());
+			}
+			else{
+				dest = result.MyPlanets().get(destinationPlanet);
 			}
 		}
 		else{
 			source = result.MyPlanets().get(sourcePlanet);
-			dest = result.NotMyPlanets().get(sourcePlanet);
+			dest = result.NotMyPlanets().get(destinationPlanet);
 		}
 		result.simulateAttack(player, source, dest);
 		result.simulateGrowth();
-		
-		return currentState;
+		return result;
 	}
 
 	public static void DoTurn(PlanetWars pw) {
-		System.out.println();
-		System.err.println("wtf");
 		double score = -Double.MAX_VALUE;
-		Planet[] result = findMinimax(pw,2);
+		Planet[] result = findMinimax(pw,3);
 		Planet source = result[0];
 		Planet dest = result[1];			
 		// Attack using the source and destinations that lead to the most promising state in the simulation
 		if (source != null && dest != null) {
 			pw.IssueOrder(source, dest);
-			System.err.println(source.PlanetID()+" " + dest.PlanetID());
 		}
 		else{
-			System.err.println("invalid planets");
+			pw.log("invalid planets");
 		}
-		System.out.println();
-
 	}
 	
 	
@@ -201,15 +222,16 @@ public class MyAlphaBot {
 	public class SimulatedPlanetWars implements Cloneable{
 
 		List<Planet> planets = new ArrayList<Planet>();
-		
+		public PlanetWars pw;
 		public SimulatedPlanetWars(PlanetWars pw) {
-
+			this.pw = pw;
 			for (Planet planet: pw.Planets()){
 				planets.add((Planet)planet.clone());
 			}
 		}
 		
-		public SimulatedPlanetWars(List<Planet> clonePlanets){
+		public SimulatedPlanetWars(List<Planet> clonePlanets, PlanetWars pw){
+			this.pw = pw;
 			for(Planet planet: clonePlanets){
 				planets.add(planet);
 			}
@@ -422,7 +444,7 @@ public class MyAlphaBot {
 	    	for(Planet planet: planets){
 	    		copyList.add((Planet)planet.clone());
 	    	}
-	    	SimulatedPlanetWars result = new SimulatedPlanetWars(copyList);
+	    	SimulatedPlanetWars result = new SimulatedPlanetWars(copyList, pw);
 	    	return result;
 	    }
 	    

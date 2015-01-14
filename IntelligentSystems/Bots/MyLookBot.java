@@ -62,7 +62,7 @@ public class MyLookBot {
 	public static Planet[] findMinimax(PlanetWars pw, int depth){
 		double[] result = findBestAttackPlanet(createSimulation(pw),depth,0 , 0);
 		//the result has on place 1 the index for the source planet and place 2 the index for the destination planet
-		return new Planet[] {pw.MyPlanets().get((int) result[1]),pw.EnemyPlanets().get((int)result[2])};
+		return new Planet[] {pw.MyPlanets().get((int) result[1]),pw.NotMyPlanets().get((int)result[2])};
 	}
 	
 	public static double[] findBestAttackPlanet(SimulatedPlanetWars pw, int depth, int sourcePlanet, int destinationPlanet){
@@ -124,7 +124,6 @@ public class MyLookBot {
 	}
 
 	public static void DoTurn(PlanetWars pw) {
-		System.out.println();
 		double score = -Double.MAX_VALUE;
 		Planet[] result = findMinimax(pw,2);
 		Planet source = result[0];
@@ -132,10 +131,9 @@ public class MyLookBot {
 		// Attack using the source and destinations that lead to the most promising state in the simulation
 		if (source != null && dest != null) {
 			pw.IssueOrder(source, dest);
-			System.err.println(source.PlanetID()+" " + dest.PlanetID());
 		}
 		else{
-			System.err.println("invalid planets");
+			pw.log("invalid planets");
 		}
 		
 

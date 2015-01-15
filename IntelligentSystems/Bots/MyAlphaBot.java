@@ -58,15 +58,17 @@ public class MyAlphaBot {
 		for(int i = 0; i < pw.MyPlanets().size(); i++){
 			for(int j = 0; j< pw.NotMyPlanets().size(); j++){
 				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,1);
-				double value = findWorstDefendPlanet(tempPW,depth-1,i,j,alpha,beta)[0];
-				if(result[0]>beta){
+				double[] values = findWorstDefendPlanet(tempPW,depth-1,i,j,alpha,beta);
+				double value = values[0];
+				if(value<alpha){
 					return result;
 				}
 				if(result[0]<value){
 					result[0]=value;
 					result[1]=i;
 					result[2]=j;
-					result[3] = Math.max(alpha, value);
+					alpha = Math.max(alpha, value);
+					result[3] = alpha;
 				}
 			}
 		}
@@ -78,20 +80,24 @@ public class MyAlphaBot {
 			double value=evaluateState(pw);
 			return new double[] {value,sourcePlanet, destinationPlanet, alpha, beta};
 		}
-		double[] result = {-Double.MAX_VALUE, sourcePlanet, destinationPlanet,alpha, beta};
+		double[] result = {Double.MAX_VALUE, sourcePlanet, destinationPlanet,alpha, beta};
 		for(int i = 0; i < pw.EnemyPlanets().size(); i++){
 			for(int j = 0; j< pw.MyPlanets().size()+pw.NeutralPlanets().size()-1; j++){
 				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,2);
-				double value = findBestAttackPlanet(tempPW,depth-1,i,j,alpha, beta)[0];
-				if(value<=alpha){
+				double[] values = findBestAttackPlanet(tempPW,depth-1,i,j,alpha, beta);
+				double value = values[0];
+				if(value>beta){
 					return result;
 				}
-				if(result[0]<value){
+				if(result[0]>value){
+					logger.info(value+"");
 					result[0]=value;
 					result[1]=i;
 					result[2]=j;
-					result[4] = Math.min(value,beta);
+					beta = Math.min(value,beta);
+					result[4] = beta;
 				}
+				
 			}
 		}
 		return result;
@@ -121,7 +127,7 @@ public class MyAlphaBot {
 
 	public static void DoTurn(PlanetWars pw) {
 		double score = -Double.MAX_VALUE;
-		Planet[] result = findMinimax(pw,3);
+		Planet[] result = findMinimax(pw,4);
 		Planet source = result[0];
 		Planet dest = result[1];			
 		// Attack using the source and destinations that lead to the most promising state in the simulation

@@ -11,7 +11,7 @@ public class Heuristics {
 	public Planet pickSourcePlanet(PlanetWars pw){
 		List<Planet> allPlanets = pw.MyPlanets();
 		
-		Planet p = new Planet(100, 1, 1, 2, 1, 1); //Horrible heuristics
+		Planet p = allPlanets.get(0); //Starting planet
 		
 		for(int i=0; i< allPlanets.size(); i++){
 			Planet temp = allPlanets.get(i);
@@ -23,7 +23,7 @@ public class Heuristics {
 				else if((temp.NumShips() - p.NumShips()) >= 5){
 					p = temp;
 				}
-				//If temp har more growth, but less than 5 planets different, don't assign temp, use previous p instead
+				//If temp has more growth, but less than 5 planets different, don't assign temp, use previous p instead
 				else{
 					//Do nothing
 				}
@@ -79,7 +79,7 @@ public class Heuristics {
 	 * @param Planet p
 	 * @return ratio: -infinity - 1 where 1 is best and -infinity is worst
 	 */
-	public double growthFleetHeuristic(PlanetWars pw, Planet p){
+	public static double growthFleetHeuristic(PlanetWars pw, Planet p){
 		//GrowthRate() returns 0-5
 		int growth = p.GrowthRate();
 		//fleets() returns number of ships

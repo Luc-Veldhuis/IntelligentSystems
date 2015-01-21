@@ -19,12 +19,12 @@ if [ -z "$1" ];
   PLAYER2="\"$1\"";
 fi
 
-#2 player 2 e.g. MyBot
+#2 player 1 e.g. MyBot
 PLAYER1=""
 
 if [ -z "$2" ];
  then
-  PLAYER1="\"java MyBot\""
+  PLAYER1="\"java HillClimbingBot\""
  else
   PLAYER1="\"$2\"";
 fi
@@ -49,7 +49,16 @@ if [ -z "$4" ];
   MAP="map$4";
 fi
 
-command="java -jar tools/PlayGame.jar tools/maps/$NUM/$MAP.txt $PLAYER1 $PLAYER2 | python tools/visualizer/visualize_locally.py"
+Mode=""
+
+if [ -z "$5" ];
+ then
+  MODE="serial"
+ else
+  MODE="parallel";
+fi
+
+command="java -jar tools/PlayGame.jar tools/maps/$NUM/$MAP.txt $PLAYER1 $PLAYER2 $MODE | python tools/visualizer/visualize_locally.py"
 
 eval $command
 

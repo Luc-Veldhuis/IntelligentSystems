@@ -12,9 +12,9 @@ while bot_player_1 == 0 or not os.path.isfile(str(bot_player_2)+'.java'):
 	bot_player_2 = input("Enter the name of the bot for player 2: ")
 
 
-path = glob.glob('C:/Program Files/Java/jdk*/bin/javac.exe')[0]
-subprocess.Popen([path,bot_player_1+'.java'])
-subprocess.Popen([path,bot_player_2+'.java'])
+#path = glob.glob('C:/Program Files/Java/jdk*/bin/javac.exe')[0]
+#subprocess.Popen([path,bot_player_1+'.java'])
+#subprocess.Popen([path,bot_player_2+'.java'])
 
 list_of_range = list(range(3,9))
 list_of_range.append('larger')

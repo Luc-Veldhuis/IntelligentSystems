@@ -88,6 +88,33 @@ public class Heuristics {
 		//Values can be fine tuned 
 		return (growth*2 - ((double)ships/pw.NumShips(1))*8)/10;
 	}
+
+	/**
+	* Will calculate heuristics of entire board, instead of planet
+	* Does not work because of class casting(SimulatedPlanetWars ipv PlanetWars)
+	* @param PlanetWars pw
+	* @return ratio: 0 is bad 1 is good
+	*
+	*/
+
+	public double gameHeuristic(PlanetWars pw){
+		int myNumberOfShips = 0;
+		int myGrowthRate = 0;
+		int enemyNumberOfShips = 0;
+		int enemyGrowthRate = 0;
+		for(Planet p:pw.MyPlanets()){
+			myNumberOfShips += p.NumShips();
+			myGrowthRate += p.GrowthRate();
+		}
+		for(Planet p:pw.EnemyPlanets()){
+			enemyNumberOfShips += p.NumShips();
+			enemyGrowthRate += p.GrowthRate();		
+		}
+		int totalNumberOfShips = myNumberOfShips + enemyNumberOfShips;
+		int totalGrowthRate = myGrowthRate + enemyGrowthRate;
+		return (((double)(myGrowthRate*2+myNumberOfShips*8))/(totalGrowthRate*2+totalNumberOfShips*8));
+
+	}
 	
 	/**
 	 * Returns an array containing all the planets (except source planet) sorted by their distance

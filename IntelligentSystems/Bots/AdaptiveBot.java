@@ -1,3 +1,5 @@
+package lookahead;
+
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -38,7 +40,11 @@ public class AdaptiveBot {
 		for (Planet p : pw.NeutralPlanets()) {
 			totalPlanetSize += p.GrowthRate();
 		}
-		int averagePlanetSize = Math.round(totalPlanetSize/pw.NeutralPlanets().size());
+		int averagePlanetSize = totalPlanetSize;
+		if(pw.NeutralPlanets().size() !=0){
+			averagePlanetSize = Math.round(totalPlanetSize/pw.NeutralPlanets().size());	
+		}
+		
 			
 		//Use AdaptivityMap to get the bot which matches the current environment characteristics  
 		String thisTurnBot = AdaptivityMap.get(neutralPlanets, averagePlanetSize);

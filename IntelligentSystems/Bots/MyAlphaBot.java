@@ -28,11 +28,11 @@ public class MyAlphaBot {
 	static FileHandler errorLog;
 	MyAlphaBot(){
 		try{
-			errorLog = new FileHandler("errorlog.txt");
-			SimpleFormatter formatter = new SimpleFormatter();  
-        	errorLog.setFormatter(formatter);
+			//errorLog = new FileHandler("errorlog.txt");
+			//SimpleFormatter formatter = new SimpleFormatter();  
+        	//errorLog.setFormatter(formatter);
         	logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-        	logger.addHandler(errorLog);
+        	//logger.addHandler(errorLog);
 		}
 		catch(Exception io){
 			System.exit(1);
@@ -60,6 +60,8 @@ public class MyAlphaBot {
 				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,1);
 				double[] values = findWorstDefendPlanet(tempPW,depth-1,i,j,alpha,beta);
 				double value = values[0];
+
+				beta = values[4];
 				if(value<alpha){
 					return result;
 				}
@@ -69,6 +71,7 @@ public class MyAlphaBot {
 					result[2]=j;
 					alpha = Math.max(alpha, value);
 					result[3] = alpha;
+					result[4] = beta;
 				}
 			}
 		}
@@ -82,18 +85,19 @@ public class MyAlphaBot {
 		}
 		double[] result = {Double.MAX_VALUE, sourcePlanet, destinationPlanet,alpha, beta};
 		for(int i = 0; i < pw.EnemyPlanets().size(); i++){
-			for(int j = 0; j< pw.MyPlanets().size()+pw.NeutralPlanets().size()-1; j++){
+			for(int j = 0; j< pw.MyPlanets().size()+pw.NeutralPlanets().size(); j++){
 				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,2);
 				double[] values = findBestAttackPlanet(tempPW,depth-1,i,j,alpha, beta);
 				double value = values[0];
+				alpha = values[3];
 				if(value>beta){
 					return result;
 				}
 				if(result[0]>value){
-					logger.info(value+"");
 					result[0]=value;
 					result[1]=i;
 					result[2]=j;
+					result[3] = alpha;
 					beta = Math.min(value,beta);
 					result[4] = beta;
 				}
@@ -165,7 +169,7 @@ public class MyAlphaBot {
 		}
 		int totalNumberOfShips = myNumberOfShips + enemyNumberOfShips;
 		int totalGrowthRate = myGrowthRate + enemyGrowthRate;
-		return (((double)(myGrowthRate*2+myNumberOfShips*8))/(totalGrowthRate*2+totalNumberOfShips*8));
+		return (((double)(myGrowthRate*8+myNumberOfShips*0))/(totalGrowthRate*8+totalNumberOfShips*0));
 	}
 	
 

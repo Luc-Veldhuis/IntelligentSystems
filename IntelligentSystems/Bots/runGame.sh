@@ -36,7 +36,12 @@ if [ -z "$3" ];
  then
   NUM="8planets" 
  else
-  NUM="$3planets";
+  if [ "$3" == "larger" ];
+   then
+    NUM="larger"
+   else
+    NUM="$3planets";
+  fi
 fi
 
 #4 map e.g. map1 || map2

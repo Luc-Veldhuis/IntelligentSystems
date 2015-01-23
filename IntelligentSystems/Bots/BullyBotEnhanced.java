@@ -1,4 +1,3 @@
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
@@ -9,41 +8,20 @@ import java.util.*;
 
 public class BullyBotEnhanced {
 		
-	public static void DoTurn(PlanetWars pw) {
-		// (1) Find my strongest planet.
+	public static void DoTurn(PlanetWars pw, int turnCounter) {
+		
+		//Pick my planet with best heuristics
 		Planet source = pickSourcePlanet(pw);
 
-		// (2) Find the weakest enemy planet
-		Planet dest = new Planet(100,1,5000,0,0,0); //Temporary planet with horrible heuristics;
-		double destScore = Double.MAX_VALUE;
+		//Find the weakest enemy planet
+		Planet dest = getEnemyPlanet(pw);
 		
-		if(pw.EnemyPlanets().size() > 1){
-			
-			for (Planet planetToAttack : pw.EnemyPlanets()) {
-				double score = (double) (planetToAttack.NumShips());
-				if (score < destScore && ((source.NumShips()/2) > planetToAttack.NumShips())) {
-					destScore = score;
-					dest = planetToAttack;
-				}
-			}
-			
-		}else{
-			List<Planet> allPlanets = pw.NeutralPlanets();
-			
-			for(int i=0; i<allPlanets.size(); i++){
-				//Check if planet index i has better heuristics
-				Planet p = allPlanets.get(i);
-				
-				if(Heuristics.growthFleetHeuristic(pw,allPlanets.get(i)) > Heuristics.growthFleetHeuristic(pw,p)){
-					dest = allPlanets.get(i);
-				}
-				
-			}
-		}
+		//Get the best conquerable enemy planet
+		Planet p = bestConquerPlanet(pw, source);
 		
-		//Security if no planet was selected, select enemy planet
-		if (dest.NumShips() == 5000){
-			dest = pw.EnemyPlanets().get(0);
+		//If a planet we can conquer was found
+		if(p != null){
+			dest = p;
 		}
 		
 		// (3) Attack!
@@ -79,17 +57,97 @@ public class BullyBotEnhanced {
 		return p;
 	}
 
+	public static Planet getEnemyPlanet(PlanetWars pw){
+		Planet dest = new Planet(100,1,5000,0,0,0); //Temporary planet with horrible heuristics;
+		double destScore = Double.MAX_VALUE;
+		
+		if(pw.EnemyPlanets().size() > 1){
+			
+			for (Planet planetToAttack : pw.EnemyPlanets()) {
+				double score = (double) (planetToAttack.NumShips());
+				//store if smaller than previous score(amount of ships)
+				if (score < destScore){
+					destScore = score;
+					dest = planetToAttack;
+				}
+			}
+			
+		}else{
+			dest = pw.EnemyPlanets().get(0);
+		}
+		
+		return dest;
+	}
+	
+	public static Planet bestConquerPlanet(PlanetWars pw, Planet source){
+		Planet p = new Planet(100,1,5000,0,0,0);
+		//Search for through all planets where we can conquer to attack the one with highest growth
+		for(Planet enemyPlanet : pw.EnemyPlanets()){
+			
+			//Out of all planets we can conquer, select the one with highest growth rate
+			if(growthFleetHeuristic(pw, enemyPlanet) > growthFleetHeuristic(pw, p) && enemyPlanet.NumShips() < (source.NumShips()/2)){
+				p = enemyPlanet;
+			}
+			
+		}
+		if(p.NumShips()==5000){
+			return null;
+		}
+		return p;
+	}
+	
+	public static double growthFleetHeuristic(PlanetWars pw, Planet p){
+		//GrowthRate() returns 0-5
+		int growth = p.GrowthRate();
+		//fleets() returns number of ships
+		int ships = p.NumShips();
+	
+		//Values can be fine tuned 
+		return (growth*2 - ((double)ships/pw.NumShips(1))*8)/10;
+	}
+	
+	/**
+	 * Returns an array containing all the planets (except source planet) sorted by their distance
+	 * to the source planet. Position 0 will be the planet with the shortest distance
+	 * 
+	 * @return : array containing planet IDs sorted by distance to source. 
+	 */
+	public Planet[] lengths(PlanetWars pw, Planet source){
+		List<Planet> allPlanets = pw.NotMyPlanets();
+		int[] lengthArray = new int[pw.NotMyPlanets().size()];
+		Planet[] planetArray = new Planet[pw.NotMyPlanets().size()];
+
+		for(int i=0; i<lengthArray.length; i++){
+			lengthArray[i] = pw.Distance(source.PlanetID(), allPlanets.get(i).PlanetID());
+		}
+		Arrays.sort(lengthArray);
+		
+		for(int n=0; n<lengthArray.length; n++){
+			for(int i=0; i<allPlanets.size(); i++){
+				if(pw.Distance(source.PlanetID(), allPlanets.get(i).PlanetID()) == lengthArray[n]){
+					planetArray[n] = allPlanets.get(i);
+					i=allPlanets.size();
+				}
+				
+			}
+		}
+		
+		return planetArray;
+	}
+	
 	public static void main(String[] args) {
 		String line = "";
 		String message = "";
 		int c;
+		int counter = 0;
 		try {
 			while ((c = System.in.read()) >= 0) {
 				switch (c) {
 				case '\n':
 					if (line.equals("go")) {
 						PlanetWars pw = new PlanetWars(message);
-						DoTurn(pw);
+						DoTurn(pw,counter);
+						counter++;
 						pw.FinishTurn();
 						message = "";
 					} else {

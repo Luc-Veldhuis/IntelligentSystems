@@ -8,7 +8,7 @@ bot_player_2 = 0
 while bot_player_1 == 0 or not os.path.isfile(str(bot_player_1)+'.java'):
 	bot_player_1 = input("Enter the name of the bot for player 1: ")
 
-while bot_player_1 == 0 or not os.path.isfile(str(bot_player_2)+'.java'):
+while bot_player_2 == 0 or not os.path.isfile(str(bot_player_2)+'.java'):
 	bot_player_2 = input("Enter the name of the bot for player 2: ")
 
 

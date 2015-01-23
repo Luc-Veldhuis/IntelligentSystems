@@ -1,0 +1,1 @@
+If the best heuristic planet on the field has less than 8 ships, then use LookaheadBot

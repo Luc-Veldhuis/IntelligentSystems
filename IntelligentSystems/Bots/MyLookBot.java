@@ -37,12 +37,11 @@ public class MyLookBot {
 	
 	public State findMinimax(PlanetWars pw, int depth){
 		State result = findBestAttackPlanet(new State(createSimulation(pw)),depth);
-		logger.info(result.getSource().Owner() + " " + result.getDestination().Owner());
 		return result;
 	}
 	
 	public State findBestAttackPlanet(State state, int depth){
-		if(depth==0){
+		if(depth==0 || state.hasEnded()){
 			return state;
 		}
 		SimulatedPlanetWars simulation = state.getSimulation();
@@ -59,6 +58,7 @@ public class MyLookBot {
 					newState.setSource(myPlanet);
 					newState.setDestination(notMyPlanet);
 					value = worstValue;
+					newState.setValue(value);
 				}
 			}
 		}
@@ -66,7 +66,7 @@ public class MyLookBot {
 	}
 	
 	public State findWorstDefendPlanet(State state, int depth){
-		if(depth==0){
+		if(depth==0 || state.hasEnded()){
 			return state;
 		}
 		SimulatedPlanetWars simulation = state.getSimulation();
@@ -83,6 +83,7 @@ public class MyLookBot {
 					newState.setSource(enemyPlanet);
 					newState.setDestination(enemyAttackPlanet);
 					value = bestValue;
+					newState.setValue(value);
 				}
 			}
 		}
@@ -205,17 +206,24 @@ public class MyLookBot {
 			int myGrowthRate = 0;
 			int enemyNumberOfShips = 0;
 			int enemyGrowthRate = 0;
+			int myPlanets = 1;
+			int enemyPlanets = 1;
 			for(Planet p:MyPlanets()){
 				myNumberOfShips += p.NumShips();
 				myGrowthRate += p.GrowthRate();
+				myPlanets += 1;
 			}
 			for(Planet p:EnemyPlanets()){
 				enemyNumberOfShips += p.NumShips();
 				enemyGrowthRate += p.GrowthRate();		
+				enemyPlanets +=1;
 			}
 			int totalNumberOfShips = myNumberOfShips + enemyNumberOfShips;
 			int totalGrowthRate = myGrowthRate + enemyGrowthRate;
-			return (1-((double)(myGrowthRate*2+myNumberOfShips*8))/(totalGrowthRate*2+totalNumberOfShips*8));
+			int i = 2;
+			return (1-((double)(myGrowthRate*i+myNumberOfShips*(10-i))/(totalGrowthRate*i+totalNumberOfShips*(10-i))));
+			//return ( NumPlanets()-myPlanets+totalNumberOfShips - myNumberOfShips + totalGrowthRate- myGrowthRate);
+			//return 0.5;
 		}
 		
 		public void simulateAttack( int player, Planet source, Planet dest){
@@ -447,9 +455,13 @@ public class MyLookBot {
 		}
 
 		public State(SimulatedPlanetWars sPw, Planet source, Planet destination, double alpha, double beta){
-			this.sPw = sPw;
-			this.source = source;
-			this.destination = destination;
+			this.sPw = sPw.clone();
+			if(source != null){
+				this.source = (Planet)source.clone();
+			}
+			if(destination != null){
+				this.destination = (Planet)destination.clone();
+			}
 			this.alpha = alpha;
 			this.beta = beta;
 			this.value = -Double.MAX_VALUE;
@@ -480,6 +492,7 @@ public class MyLookBot {
 		}
 		public void adjustPlanetWars(){
 			sPw.simulateAttack(source.Owner(), source, destination);
+			sPw.simulateGrowth();
 			calculateValue();
 		}
 
@@ -493,6 +506,14 @@ public class MyLookBot {
 
 		public void setSimulation(SimulatedPlanetWars simulation){
 			this.sPw = simulation;
+		}
+
+		public void setValue(double value){
+			this.value = value;
+		}
+
+		public boolean hasEnded(){
+			return (sPw.Winner() != -1);
 		}
 	}
 }

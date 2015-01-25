@@ -1,4 +1,3 @@
-//package lookahead;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -23,10 +22,10 @@ import java.util.*;
  * Is there a smart way to make this more efficient?
  */
 
-public class MyAlphaBot {
+public class MyAlphaBotFloor {
 	static Logger logger;
 	static FileHandler errorLog;
-	MyAlphaBot(){
+	MyAlphaBotFloor(){
 		try{
 			//errorLog = new FileHandler("errorlog.txt");
 			//SimpleFormatter formatter = new SimpleFormatter();  
@@ -42,33 +41,111 @@ public class MyAlphaBot {
 
 	//Not to be confused with alphabet
 	
-	public State findMinimax(PlanetWars pw, int depth){
-		State result = findBestAttackPlanet(new State(createSimulation(pw)),depth);
-		return result;
+	public State move(PlanetWars pw, int depth){
+		double alpha = -Double.MAX_VALUE;
+		double beta = Double.MAX_VALUE;
+		double bestScore = -Double.MAX_VALUE;
+		State bestMove = null;
+		SimulatedPlanetWars simulation = createSimulation(pw);
+		for(Planet myPlanet: simulation.MyPlanets()){
+			for(Planet notMyPlanet: simulation.NotMyPlanets()){
+								
+				SimulatedPlanetWars childpw = simulation.clone();
+				childpw.simulateAttack(myPlanet, notMyPlanet);
+				
+				if(bestMove == null){
+					bestMove = new State(simulation, myPlanet, notMyPlanet); //or childpw instead of simulation
+				}
+		        alpha = Math.max(alpha, miniMax(childpw, depth-1, alpha, beta));
+
+		        if(alpha>bestScore){
+
+		        	bestMove = new State(childpw, myPlanet, notMyPlanet);
+		        	bestMove.setValue(childpw.evaluateState());
+		        	bestScore = alpha;
+		        }
+			}
+		}
+		pw.log("Check" + " " + bestMove.getValue());
+		return bestMove;	
 	}
+		
+		private double miniMax(SimulatedPlanetWars currentState, int depth, double alphaVal, double betaVal){//spw was State
+			double alpha = alphaVal;
+			double beta = betaVal;
+			
+			if(depth==0){
+				currentState.pw.log(currentState.evaluateState());
+				return currentState.evaluateState();
+			}
+			if(depth%2==0 && depth!=0){
+				for(Planet myPlanet: currentState.MyPlanets()){// getSimulation().MyPlanets()){
+					for(Planet notMyPlanet: currentState.NotMyPlanets()){//getSimulation().NotMyPlanets()){
+						SimulatedPlanetWars simulation = currentState.clone();//.getSimulation();
+						simulation.simulateAttack(myPlanet, notMyPlanet);
+						simulation.simulateGrowth();
+						
+						alpha = Math.max(alpha, miniMax(simulation, depth-1, alpha, beta));
+						if(alpha>=beta){ //Maybe check a larger difference than if alpha is simply bigger than beta?
+							return alpha;
+						}
+					}
+				}
+				//simulation2.pw.log(alpha);
+
+				return alpha;
+			}
+			else{
+				for(Planet enemyPlanet: currentState.EnemyPlanets()){//getSimulation().EnemyPlanets()){
+					for(Planet enemyAttackPlanet: currentState.NotMyPlanets()){//getSimulation().NotMyPlanets()){
+						SimulatedPlanetWars simulation = currentState.clone();//.getSimulation();
+						simulation.simulateAttack(2,enemyPlanet, enemyAttackPlanet);
+						simulation.simulateGrowth();
+						
+						beta = Math.min(beta, miniMax(simulation, depth-1, alpha, beta));
+					if(alpha>=beta){
+						return beta;//alpha;
+					}
+				}
+			}
+			return beta;	
+			}
+		}
 	
+	
+	
+	/*
+
 	public State findBestAttackPlanet(State state, int depth){
 		if(depth==0){
 			return state;
 		}
 		SimulatedPlanetWars simulation = state.getSimulation();
 		State newState = new State(state);
-		double value = Double.MAX_VALUE;
+		double value = -Double.MAX_VALUE;
 		for(Planet myPlanet: simulation.MyPlanets()){
 			for(Planet notMyPlanet: simulation.NotMyPlanets()){
 				State tempState = new State(simulation, myPlanet, notMyPlanet);
 				tempState.adjustPlanetWars();
 				State worstState = findWorstDefendPlanet(tempState, depth-1);
 				double worstValue = worstState.getValue();
-				if(worstValue > newState.getBeta()){
-					return newState;
+				value=Math.max(value,worstValue);
+				
+				if(value>=newState.getBeta()){
+					if (value==worstValue){
+						return worstState;
+					}else{
+						return newState;
+					}
 				}
+				newState.setAlpha(Math.max(newState.getAlpha(),value));
+				
 				if(worstValue < value){
 					newState.setSimulation(worstState.getSimulation());
 					newState.setSource(myPlanet);
 					newState.setDestination(notMyPlanet);
-					newState.setAlpha(Math.max(newState.getAlpha(),worstValue));
-					value = worstValue;
+				
+
 					newState.setBeta(worstState.getBeta());
 					newState.setValue(worstValue);
 				}
@@ -106,11 +183,12 @@ public class MyAlphaBot {
 		}
 		return newState;
 	}
-
+*/
 	public void DoTurn(PlanetWars pw) {
-		State result = findMinimax(pw,2);
-		Planet source = pw.GetPlanet(result.getSource().PlanetID());;
-		Planet dest = pw.GetPlanet(result.getDestination().PlanetID());;			
+		State result = move(pw,4);
+		Planet source = result.getSource();
+		Planet dest = result.getDestination();
+
 		// Attack using the source and destinations that lead to the most promising state in the simulation
 		if (source != null && dest != null) {
 			pw.IssueOrder(source, dest);
@@ -132,7 +210,7 @@ public class MyAlphaBot {
 				case '\n':
 					if (line.equals("go")) {
 						PlanetWars pw = new PlanetWars(message);
-						new MyAlphaBot().DoTurn(pw);
+						new MyAlphaBotFloor().DoTurn(pw);
 						pw.FinishTurn();
 						message = "";
 					} else {
@@ -168,7 +246,7 @@ public class MyAlphaBot {
 	/**
 	 * Static LookaheadBot, used only to access SimulatedPlanetWars (DON'T CHANGE)
 	 */
-	static MyAlphaBot dummyBot = new MyAlphaBot();
+	static MyAlphaBotFloor dummyBot = new MyAlphaBotFloor();
 	
 	/**
 	 * Class which provide the simulation environment, has same interface as PlanetWars 
@@ -217,10 +295,10 @@ public class MyAlphaBot {
 			
 			// CHANGE HERE
 			
-			int myNumberOfShips = 0;
-			int myGrowthRate = 0;
-			int enemyNumberOfShips = 0;
-			int enemyGrowthRate = 0;
+			double myNumberOfShips = 0;
+			double myGrowthRate = 0;
+			double enemyNumberOfShips = 0;
+			double enemyGrowthRate = 0;
 			for(Planet p:MyPlanets()){
 				myNumberOfShips += p.NumShips();
 				myGrowthRate += p.GrowthRate();
@@ -229,14 +307,16 @@ public class MyAlphaBot {
 				enemyNumberOfShips += p.NumShips();
 				enemyGrowthRate += p.GrowthRate();		
 			}
-			int totalNumberOfShips = myNumberOfShips + enemyNumberOfShips;
-			int totalGrowthRate = myGrowthRate + enemyGrowthRate;
-			return (1-((double)(myGrowthRate*2+myNumberOfShips*8))/(totalGrowthRate*2+totalNumberOfShips*8));
+			double totalNumberOfShips = myNumberOfShips + enemyNumberOfShips;
+			double totalGrowthRate = myGrowthRate + enemyGrowthRate;
+			return (((double)(myGrowthRate*2+myNumberOfShips*8))/(totalGrowthRate*2+totalNumberOfShips*8));
+			//return myNumberOfShips/enemyNumberOfShips;
 		}
 
-		public void simulateAttack( int player, Planet source, Planet dest){
+		public void simulateAttack(int player, Planet source, Planet dest){
 			
 			if (source.Owner() != player){
+				pw.log("ohoh");
 				return;
 			}
 			
@@ -261,7 +341,7 @@ public class MyAlphaBot {
 
 		}
 		
-		public void simulateAttack( Planet source, Planet dest){
+		public void simulateAttack(Planet source, Planet dest){
 			simulateAttack(1, source, dest);
 		}
 		

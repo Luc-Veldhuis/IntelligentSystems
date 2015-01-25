@@ -3,6 +3,8 @@
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.logging.Logger;
+
 
 /** Another smarter kind of bot, which implements a minimax algorithm with look-ahead of two turns.
  * It simulates the opponent using the BullyBot strategy and simulates the possible outcomes for any
@@ -19,155 +21,88 @@ import java.util.*;
 
 public class MyLookBot {
 
-	//static Heuristics hc;
-	/*
-	public static Planet getBestPlanet(PlanetWars pw, int depth, int numberOfChildren){
-		SimulatedPlanetWars copyOfPlanetWars = createSimulation(pw);
-		double score = -Double.MAX_VALUE;
-		Planet bestPlanet = null;
-		Planet [] bestPlanetArray = new Planet[numberOfChildren];
-		int player = (depth % 2 == 0) ? 1 : 2;
-		//check which are the numberOfChilerden best planets to attack
-		//check which are the numberOfChilerden best planets of the enemy to attack
-		if(depth == 0){
-			return null;
+	static Logger logger;
+	MyLookBot(){
+		try{
+			//errorLog = new FileHandler("errorlog.txt");
+			//SimpleFormatter formatter = new SimpleFormatter();  
+        	//errorLog.setFormatter(formatter);
+        	logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+        	//logger.addHandler(errorLog);
 		}
-		List<Planet> listOfPlanets = pw.EnemyPlanets();
-		if(player == 1){
-			//my turn
-			listOfPlanets = pw.MyPlanets();
+		catch(Exception io){
+			System.exit(1);
 		}
-		for(int i = 0; i< numberOfChildren && i < listOfPlanets.size();i++){
-			SimulatedPlanetWars simulation = createSimulation(pw);
-			//get best starting planet left
-			Planet source = hc.pickSourcePlanet(copyOfPlanetWars,i);
-			for(int j = 0; j<numberOfChildren && i < pw.EnemyPlanets();j++){
-				Planet destination = hc.pickDestination(copyOfPlanetWars,j);
-				simulation.simulateAttack(source,destination);
-				simulation.simulateGrowth();
-				
-			}
-			
-			
-			
-			
-			//start the following without the source planet
-			copyOfPlanetWars.planets.remove(source);
-		}
-
-
-	}
-	*/
-	
-	public static Planet[] findMinimax(PlanetWars pw, int depth){
-		double[] result = findBestAttackPlanet(createSimulation(pw),depth,0 , 0);
-		//the result has on place 1 the index for the source planet and place 2 the index for the destination planet
-		return new Planet[] {pw.MyPlanets().get((int) result[1]),pw.NotMyPlanets().get((int)result[2])};
 	}
 	
-	public static double[] findBestAttackPlanet(SimulatedPlanetWars pw, int depth, int sourcePlanet, int destinationPlanet){
-		if(depth==0){
-			return new double[] {evaluateState(pw),sourcePlanet, destinationPlanet};
-		}
-		double[] result = {-Double.MAX_VALUE, sourcePlanet, destinationPlanet};
-		for(int i = 0; i < pw.MyPlanets().size(); i++){
-			for(int j = 0; j< pw.NotMyPlanets().size(); j++){
-				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,1);
-				double value = findWorstDefendPlanet(tempPW,depth-1,i,j)[0];
-				if(result[0]<value){
-					result[0]=value;
-					result[1]=i;
-					result[2]=j;
-				}
-			}
-		}
+	public State findMinimax(PlanetWars pw, int depth){
+		State result = findBestAttackPlanet(new State(createSimulation(pw)),depth);
+		logger.info(result.getSource().Owner() + " " + result.getDestination().Owner());
 		return result;
 	}
 	
-	public static double[] findWorstDefendPlanet(SimulatedPlanetWars pw, int depth, int sourcePlanet, int destinationPlanet){
+	public State findBestAttackPlanet(State state, int depth){
 		if(depth==0){
-			return new double[] {evaluateState(pw),sourcePlanet, destinationPlanet};
+			return state;
 		}
-		double[] result = {-Double.MAX_VALUE, sourcePlanet, destinationPlanet};
-		for(int i = 0; i < pw.EnemyPlanets().size(); i++){
-			for(int j = 0; j< pw.MyPlanets().size()+pw.NeutralPlanets().size(); j++){
-				SimulatedPlanetWars tempPW = adjustPlanetWars(pw,i,j,2);
-				double value = findBestAttackPlanet(tempPW,depth-1,i,j)[0];
-				if(result[0]<value){
-					result[0]=value;
-					result[1]=i;
-					result[2]=j;
+		SimulatedPlanetWars simulation = state.getSimulation();
+		State newState = new State(simulation, state.getSource(), state.getDestination());
+		double value = Double.MAX_VALUE;
+		for(Planet myPlanet: simulation.MyPlanets()){
+			for(Planet notMyPlanet: simulation.NotMyPlanets()){
+				State tempState = new State(simulation, myPlanet, notMyPlanet);
+				tempState.adjustPlanetWars();
+				State worstState = findWorstDefendPlanet(tempState, depth-1);
+				double worstValue = worstState.getValue();
+				if(worstValue < value){
+					newState.setSimulation(worstState.getSimulation());
+					newState.setSource(myPlanet);
+					newState.setDestination(notMyPlanet);
+					value = worstValue;
 				}
 			}
 		}
-		return result;
+		return newState;
 	}
 	
-	public static SimulatedPlanetWars adjustPlanetWars(SimulatedPlanetWars currentState, int sourcePlanet, int destinationPlanet, int player){
-		Planet source = null;
-		Planet dest = null;
-		SimulatedPlanetWars result = currentState.clone();
-		if(player == 2){
-			source = result.EnemyPlanets().get(sourcePlanet);
-			if(destinationPlanet>result.MyPlanets().size()){
-				dest = result.NeutralPlanets().get(destinationPlanet-result.MyPlanets().size());
+	public State findWorstDefendPlanet(State state, int depth){
+		if(depth==0){
+			return state;
+		}
+		SimulatedPlanetWars simulation = state.getSimulation();
+		State newState = new State(simulation, state.getSource(), state.getDestination());
+		double value = -Double.MAX_VALUE;
+		for(Planet enemyPlanet: simulation.EnemyPlanets()){
+			for(Planet enemyAttackPlanet: simulation.EnemyAttackPlanets()){
+				State tempState = new State(simulation, enemyPlanet, enemyAttackPlanet);
+				tempState.adjustPlanetWars();
+				State bestState = findBestAttackPlanet(tempState, depth-1);
+				double bestValue = bestState.getValue();
+				if(bestValue > value){
+					newState.setSimulation(bestState.getSimulation());
+					newState.setSource(enemyPlanet);
+					newState.setDestination(enemyAttackPlanet);
+					value = bestValue;
+				}
 			}
 		}
-		else{
-			source = result.MyPlanets().get(sourcePlanet);
-			dest = result.NotMyPlanets().get(sourcePlanet);
-		}
-		result.simulateAttack(player, source, dest);
-		result.simulateGrowth();
-		
-		return currentState;
+		return newState;
 	}
 
-	public static void DoTurn(PlanetWars pw) {
-		double score = -Double.MAX_VALUE;
-		Planet[] result = findMinimax(pw,2);
-		Planet source = result[0];
-		Planet dest = result[1];			
+	public void DoTurn(PlanetWars pw) {
+		State result = findMinimax(pw,2);
+		Planet source = pw.GetPlanet(result.getSource().PlanetID());
+		Planet dest = pw.GetPlanet(result.getDestination().PlanetID());			
 		// Attack using the source and destinations that lead to the most promising state in the simulation
 		if (source != null && dest != null) {
 			pw.IssueOrder(source, dest);
 		}
 		else{
-			pw.log("invalid planets");
+			logger.info("invalid planets");
 		}
 		
 
-	}
-	
-	
-	/**
-	 * This function evaluates how promising a simulated state is.
-	 * You can change it to anything that makes sense, using combinations 
-	 * of number of planets, ships or growth rate.
-	 * @param SimulatedPlanetWars pw
-	 * @return score of the final state of the simulation
-	 */
-	public static double evaluateState(SimulatedPlanetWars pw){
-		
-		// CHANGE HERE
-		
-		int myNumberOfShips = 0;
-		int myGrowthRate = 0;
-		int enemyNumberOfShips = 0;
-		int enemyGrowthRate = 0;
-		for(Planet p:pw.MyPlanets()){
-			myNumberOfShips += p.NumShips();
-			myGrowthRate += p.GrowthRate();
-		}
-		for(Planet p:pw.EnemyPlanets()){
-			enemyNumberOfShips += p.NumShips();
-			enemyGrowthRate += p.GrowthRate();		
-		}
-		int totalNumberOfShips = myNumberOfShips + enemyNumberOfShips;
-		int totalGrowthRate = myGrowthRate + enemyGrowthRate;
-		return (((double)(myGrowthRate*2+myNumberOfShips*8))/(totalGrowthRate*2+totalNumberOfShips*8));
-	}
-	
+	}	
 
 	
 	// don't change this
@@ -182,7 +117,7 @@ public class MyLookBot {
 				case '\n':
 					if (line.equals("go")) {
 						PlanetWars pw = new PlanetWars(message);
-						DoTurn(pw);
+						new MyLookBot().DoTurn(pw);
 						pw.FinishTurn();
 						message = "";
 					} else {
@@ -253,6 +188,34 @@ public class MyLookBot {
 				
 				planets.set(p.PlanetID(), newp);
 			}
+		}
+
+		/**
+		 * This function evaluates how promising a simulated state is.
+		 * You can change it to anything that makes sense, using combinations 
+		 * of number of planets, ships or growth rate.
+		 * @param SimulatedPlanetWars pw
+		 * @return score of the final state of the simulation
+		 */
+		public double evaluateState(){
+			
+			// CHANGE HERE
+			
+			int myNumberOfShips = 0;
+			int myGrowthRate = 0;
+			int enemyNumberOfShips = 0;
+			int enemyGrowthRate = 0;
+			for(Planet p:MyPlanets()){
+				myNumberOfShips += p.NumShips();
+				myGrowthRate += p.GrowthRate();
+			}
+			for(Planet p:EnemyPlanets()){
+				enemyNumberOfShips += p.NumShips();
+				enemyGrowthRate += p.GrowthRate();		
+			}
+			int totalNumberOfShips = myNumberOfShips + enemyNumberOfShips;
+			int totalGrowthRate = myGrowthRate + enemyGrowthRate;
+			return (1-((double)(myGrowthRate*2+myNumberOfShips*8))/(totalGrowthRate*2+totalNumberOfShips*8));
 		}
 		
 		public void simulateAttack( int player, Planet source, Planet dest){
@@ -360,6 +323,16 @@ public class MyLookBot {
 			}
 			return r;
 	    }
+
+	    public List<Planet> EnemyAttackPlanets(){
+	    	List<Planet> r = new ArrayList<Planet>();
+	    	for(Planet p : planets){
+	    		if(p.Owner() == 0 || p.Owner() == 1){
+	    			r.add(p);
+	    		}
+	    	}
+	    	return r;
+	    }
 	    
 	    // Return a list of all neutral planets.
 	    public List<Planet> NeutralPlanets() {
@@ -454,5 +427,72 @@ public class MyLookBot {
 	    }
 	    
 	
+	}
+
+	public class State{
+		private SimulatedPlanetWars sPw;
+		private Planet source;
+		private Planet destination;
+		private double alpha;
+		private double beta;
+		private double value;
+
+		public State(SimulatedPlanetWars sPw){
+			this(sPw, null, null);
+
+		}
+
+		public State(SimulatedPlanetWars sPw, Planet source, Planet destination){
+			this(sPw, source, destination, -Double.MAX_VALUE, Double.MAX_VALUE);
+		}
+
+		public State(SimulatedPlanetWars sPw, Planet source, Planet destination, double alpha, double beta){
+			this.sPw = sPw;
+			this.source = source;
+			this.destination = destination;
+			this.alpha = alpha;
+			this.beta = beta;
+			this.value = -Double.MAX_VALUE;
+		}
+
+		public Planet getSource(){
+			return source;
+		}
+		public Planet getDestination(){
+			return destination;
+		}
+		public double getAlpha(){
+			return alpha;
+		}
+
+		public double getBeta(){
+			return beta;
+		}
+		public double getValue(){
+			return value;
+		}
+
+		private void calculateValue(){
+			value = sPw.evaluateState();
+		}
+		public SimulatedPlanetWars getSimulation(){
+			return sPw.clone();
+		}
+		public void adjustPlanetWars(){
+			sPw.simulateAttack(source.Owner(), source, destination);
+			calculateValue();
+		}
+
+		public void setSource(Planet source){
+			this.source = source;
+		}
+
+		public void setDestination(Planet destination){
+			this.destination = destination;
+		}
+
+		public void setSimulation(SimulatedPlanetWars simulation){
+			this.sPw = simulation;
+		}
 	}
 }

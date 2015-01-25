@@ -49,6 +49,7 @@ public class MyAlphaBot {
 	
 	public State findBestAttackPlanet(State state, int depth){
 		if(depth==0){
+			state.calculateValue();
 			return state;
 		}
 		SimulatedPlanetWars simulation = state.getSimulation();
@@ -61,7 +62,7 @@ public class MyAlphaBot {
 				State worstState = findWorstDefendPlanet(tempState, depth-1);
 				double worstValue = worstState.getValue();
 				if(worstValue > newState.getBeta()){
-					return newState;
+					break;
 				}
 				if(worstValue < value){
 					newState.setSimulation(worstState.getSimulation());
@@ -79,6 +80,7 @@ public class MyAlphaBot {
 	
 	public State findWorstDefendPlanet(State state, int depth){
 		if(depth==0){
+			state.calculateValue();
 			return state;
 		}
 		SimulatedPlanetWars simulation = state.getSimulation();
@@ -91,7 +93,7 @@ public class MyAlphaBot {
 				State bestState = findBestAttackPlanet(tempState, depth-1);
 				double bestValue = bestState.getValue();
 				if(bestValue < newState.getAlpha()){
-					return newState;
+					break;
 				}
 				if(bestValue > value){
 					newState.setSimulation(bestState.getSimulation());
@@ -108,7 +110,7 @@ public class MyAlphaBot {
 	}
 
 	public void DoTurn(PlanetWars pw) {
-		State result = findMinimax(pw,2);
+		State result = findMinimax(pw,4);
 		Planet source = pw.GetPlanet(result.getSource().PlanetID());;
 		Planet dest = pw.GetPlanet(result.getDestination().PlanetID());;			
 		// Attack using the source and destinations that lead to the most promising state in the simulation
@@ -221,17 +223,23 @@ public class MyAlphaBot {
 			int myGrowthRate = 0;
 			int enemyNumberOfShips = 0;
 			int enemyGrowthRate = 0;
+			int myPlanets = 1;
+			int enemyPlanets = 1;
 			for(Planet p:MyPlanets()){
 				myNumberOfShips += p.NumShips();
 				myGrowthRate += p.GrowthRate();
+				myPlanets += 1;
 			}
 			for(Planet p:EnemyPlanets()){
 				enemyNumberOfShips += p.NumShips();
 				enemyGrowthRate += p.GrowthRate();		
+				enemyPlanets +=1;
 			}
 			int totalNumberOfShips = myNumberOfShips + enemyNumberOfShips;
 			int totalGrowthRate = myGrowthRate + enemyGrowthRate;
-			return (1-((double)(myGrowthRate*2+myNumberOfShips*8))/(totalGrowthRate*2+totalNumberOfShips*8));
+			int i = 2;
+			//return ( (NumPlanets()-myPlanets)*10000+(totalNumberOfShips - myNumberOfShips)*1 + (totalGrowthRate- myGrowthRate)*2);
+			return (1-((double)(myGrowthRate*i+myNumberOfShips*(10-i))/(totalGrowthRate*i+totalNumberOfShips*(10-i))));
 		}
 
 		public void simulateAttack( int player, Planet source, Planet dest){
@@ -505,7 +513,7 @@ public class MyAlphaBot {
 		}
 		public void adjustPlanetWars(){
 			sPw.simulateAttack(source.Owner(), source, destination);
-			calculateValue();
+			sPw.simulateGrowth();
 		}
 
 		public void setSource(Planet source){

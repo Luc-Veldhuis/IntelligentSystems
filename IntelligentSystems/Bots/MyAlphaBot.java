@@ -60,17 +60,17 @@ public class MyAlphaBot {
 				tempState.adjustPlanetWars();
 				State worstState = findWorstDefendPlanet(tempState, depth-1);
 				double worstValue = worstState.getValue();
-				if(worstValue >= newState.getBeta()){
-					logger.info("is called");
+				if(worstValue > newState.getBeta()){
 					return newState;
 				}
-
 				if(worstValue < value){
 					newState.setSimulation(worstState.getSimulation());
 					newState.setSource(myPlanet);
 					newState.setDestination(notMyPlanet);
 					newState.setAlpha(Math.max(newState.getAlpha(),worstValue));
 					value = worstValue;
+					newState.setBeta(worstState.getBeta());
+					newState.setValue(worstValue);
 				}
 			}
 		}
@@ -90,14 +90,16 @@ public class MyAlphaBot {
 				tempState.adjustPlanetWars();
 				State bestState = findBestAttackPlanet(tempState, depth-1);
 				double bestValue = bestState.getValue();
-				if(bestValue <= newState.getAlpha()){
+				if(bestValue < newState.getAlpha()){
 					return newState;
 				}
 				if(bestValue > value){
 					newState.setSimulation(bestState.getSimulation());
 					newState.setSource(enemyPlanet);
 					newState.setDestination(enemyAttackPlanet);
+					newState.setAlpha(bestState.getAlpha());
 					newState.setBeta(Math.min(newState.getBeta(),bestValue));
+					newState.setValue(bestValue);
 					value = bestValue;
 				}
 			}
@@ -106,7 +108,7 @@ public class MyAlphaBot {
 	}
 
 	public void DoTurn(PlanetWars pw) {
-		State result = findMinimax(pw,4);
+		State result = findMinimax(pw,2);
 		Planet source = pw.GetPlanet(result.getSource().PlanetID());;
 		Planet dest = pw.GetPlanet(result.getDestination().PlanetID());;			
 		// Attack using the source and destinations that lead to the most promising state in the simulation
@@ -495,7 +497,7 @@ public class MyAlphaBot {
 			return value;
 		}
 
-		private void calculateValue(){
+		public void calculateValue(){
 			value = sPw.evaluateState();
 		}
 		public SimulatedPlanetWars getSimulation(){
@@ -522,6 +524,10 @@ public class MyAlphaBot {
 		}
 		public void setBeta(double beta){
 			this.beta = beta;
+		}
+
+		public void setValue(double value){
+			this.value = value;
 		}
 	}
 }

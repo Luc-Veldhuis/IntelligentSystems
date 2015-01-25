@@ -480,9 +480,13 @@ public class MyAlphaBot {
 		}
 
 		public State(SimulatedPlanetWars sPw, Planet source, Planet destination, double alpha, double beta){
-			this.sPw = sPw;
-			this.source = source;
-			this.destination = destination;
+			this.sPw = sPw.clone();
+			if(source != null){
+				this.source = (Planet)source.clone();
+			}
+			if(destination != null){
+				this.destination = (Planet)destination.clone();
+			}
 			this.alpha = alpha;
 			this.beta = beta;
 			this.value = -Double.MAX_VALUE;

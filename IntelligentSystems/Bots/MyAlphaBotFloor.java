@@ -130,7 +130,6 @@ public class MyAlphaBotFloor {
 				tempState.adjustPlanetWars();
 				State worstState = findWorstDefendPlanet(tempState, depth-1);
 				double worstValue = worstState.getValue();
-<<<<<<< HEAD:IntelligentSystems/Bots/MyAlphaBotFloor.java
 				value=Math.max(value,worstValue);
 				
 				if(value>=newState.getBeta()){
@@ -142,7 +141,6 @@ public class MyAlphaBotFloor {
 =======
 				if(worstValue > newState.getBeta()){
 					break;
->>>>>>> 72595b03e997c6818647bd9b682d7c00f7afed5c:IntelligentSystems/Bots/MyAlphaBot.java
 				}
 				newState.setAlpha(Math.max(newState.getAlpha(),value));
 				
@@ -192,16 +190,10 @@ public class MyAlphaBotFloor {
 	}
 */
 	public void DoTurn(PlanetWars pw) {
-<<<<<<< HEAD:IntelligentSystems/Bots/MyAlphaBotFloor.java
 		State result = move(pw,4);
 		Planet source = result.getSource();
 		Planet dest = result.getDestination();
-
-=======
-		State result = findMinimax(pw,4);
-		Planet source = pw.GetPlanet(result.getSource().PlanetID());;
-		Planet dest = pw.GetPlanet(result.getDestination().PlanetID());;			
->>>>>>> 72595b03e997c6818647bd9b682d7c00f7afed5c:IntelligentSystems/Bots/MyAlphaBot.java
+		
 		// Attack using the source and destinations that lead to the most promising state in the simulation
 		if (source != null && dest != null) {
 			pw.IssueOrder(source, dest);

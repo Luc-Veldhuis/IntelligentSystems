@@ -263,11 +263,18 @@ public class LookaheadBot {
 			}
 
 		}
-		
+
+	
 		public List<Planet> Planets(){
 			return planets;
 		}
 		
+	    public void simulateBullyBotEnhancedAttack(PlanetWars pw){
+		BullyBotEnhanced.DoTurn(pw,0);
+
+	    }
+
+
 	    // Returns the number of planets. Planets are numbered starting with 0.
 	    public int NumPlanets() {
 	    	return planets.size();

@@ -35,7 +35,7 @@ public class BullyBotEnhanced {
 		
 		Planet p = allPlanets.get(0); //Starting planet
 		
-		for(int i=0; i< allPlanets.size(); i++){
+		for(int i=1; i< allPlanets.size(); i++){
 			Planet temp = allPlanets.get(i);
 			if(p.NumShips() <= temp.NumShips()){
 				if(temp.GrowthRate() <= p.GrowthRate()){
